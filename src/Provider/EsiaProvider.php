@@ -7,12 +7,15 @@ use Ekapusta\OAuth2Esia\Interfaces\Security\SignerInterface;
 use Ekapusta\OAuth2Esia\Interfaces\Token\ScopedTokenInterface;
 use Ekapusta\OAuth2Esia\Token\EsiaAccessToken;
 use InvalidArgumentException;
+use Lcobucci\Clock\SystemClock;
 use Lcobucci\JWT\Configuration;
 use Lcobucci\JWT\Encoder;
 use Lcobucci\JWT\Encoding\JoseEncoder;
 use Lcobucci\JWT\Signer;
 use Lcobucci\JWT\Signer\Key\LocalFileReference;
 use Lcobucci\JWT\Signer\Rsa\Sha256;
+use Lcobucci\JWT\Validation\Constraint\LooseValidAt;
+use Lcobucci\JWT\Validation\Constraint\StrictValidAt;
 use League\OAuth2\Client\Grant\AbstractGrant;
 use League\OAuth2\Client\Provider\AbstractProvider;
 use League\OAuth2\Client\Provider\Exception\IdentityProviderException;
@@ -211,6 +214,11 @@ class EsiaProvider extends AbstractProvider implements ProviderInterface
     {
         $signingKey = LocalFileReference::file($this->remotePublicKey);
         $config = Configuration::forSymmetricSigner($this->remoteSigner, $signingKey);
+        $clock = SystemClock::fromUTC();
+        $config->setValidationConstraints(
+            new LooseValidAt($clock),
+            new StrictValidAt($clock),
+        );
         return new EsiaAccessToken($response, $config);
     }
 
