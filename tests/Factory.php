@@ -13,8 +13,6 @@ use Lcobucci\JWT\Builder;
 use Lcobucci\JWT\Signer;
 use Lcobucci\JWT\Signer\Key;
 use Lcobucci\JWT\Signer\Rsa\Sha256;
-use Lcobucci\JWT\Validation\Constraint\LooseValidAt;
-use Lcobucci\JWT\Validation\Constraint\StrictValidAt;
 use Monolog\Handler\NullHandler;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
@@ -68,16 +66,10 @@ class Factory
     public static function createAccessToken($privateKeyPath, $publicKeyPath, Signer $signer = null)
     {
         if (null == $signer) {
-            $config = Configuration::forAsymmetricSigner(new Sha256(), Key\InMemory::file($privateKeyPath), Key\InMemory::file($publicKeyPath));
+            $config = Configuration::forAsymmetricSigner(new Sha256(), Key\InMemory::file($publicKeyPath), Key\InMemory::file($privateKeyPath));
         } else {
             $config = Configuration::forUnsecuredSigner();
         }
-
-        $clock = SystemClock::fromUTC();
-        $config->setValidationConstraints(
-            new LooseValidAt($clock),
-            new StrictValidAt($clock),
-        );
 
         $accessToken = $config->builder()
             ->issuedAt(new DateTimeImmutable())

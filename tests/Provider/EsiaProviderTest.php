@@ -207,13 +207,11 @@ class EsiaProviderTest extends TestCase
         Factory::createLogger('esia-provider')->warning('Person info', $info);
     }
 
-    /**
-     * @expectedException \League\OAuth2\Client\Provider\Exception\IdentityProviderException
-     * @expectedExceptionMessage Unauthorized
-     * @expectedExceptionCode 401
-     */
     public function testPersonGeneralInfoFailsAsOfBadSignedToken()
     {
+        $this->expectException(\League\OAuth2\Client\Provider\Exception\IdentityProviderException::class);
+        $this->expectExceptionMessage('Unauthorized');
+        $this->expectExceptionCode(401);
         $accessToken = Factory::createAccessToken(
             Factory::KEYS.'ekapusta.rsa.test.key',
             Factory::KEYS.'ekapusta.rsa.test.cer'

@@ -16,7 +16,7 @@ class EsiaAccessTokenTest extends TestCase
     public function testInvalidAsItExpired()
     {
         $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Invalid token provided');
+        $this->expectExceptionMessage('Access token is invalid');
         $config = Configuration::forSymmetricSigner(new Sha256(), InMemory::plainText('testing'));
         $config->setValidationConstraints(new LooseValidAt(SystemClock::fromUTC()));
 
@@ -27,7 +27,7 @@ class EsiaAccessTokenTest extends TestCase
 
     public function testInvalidAsBadSignature()
     {
-        $this->expectExceptionMessage('Access token can not be verified');
+        $this->expectExceptionMessage('It was not possible to parse your key');
         Factory::createAccessToken(
             Factory::KEYS.'ekapusta.rsa.test.key',
             Factory::KEYS.'another.rsa.test.public.key'
