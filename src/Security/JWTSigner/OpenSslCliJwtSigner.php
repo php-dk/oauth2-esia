@@ -4,8 +4,9 @@ namespace Ekapusta\OAuth2Esia\Security\JWTSigner;
 
 use Ekapusta\OAuth2Esia\Transport\Process;
 use Lcobucci\JWT\Signer\Key;
+use Lcobucci\JWT\Signer;
 
-final class OpenSslCliJwtSigner extends BaseSigner
+final class OpenSslCliJwtSigner implements Signer
 {
     private $toolPath;
     private $algorythmId;
@@ -42,7 +43,7 @@ final class OpenSslCliJwtSigner extends BaseSigner
         return true;
     }
 
-    public function createHash($payload, Key $key)
+    public function sign(string $payload, Key $key): string
     {
         $sign = new TmpFile($key->contents());
 

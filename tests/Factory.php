@@ -68,7 +68,7 @@ class Factory
     public static function createAccessToken($privateKeyPath, $publicKeyPath, Signer $signer = null)
     {
         if (null == $signer) {
-            $config = Configuration::forSymmetricSigner(new Sha256(), Key\InMemory::file($privateKeyPath));
+            $config = Configuration::forAsymmetricSigner(new Sha256(), Key\InMemory::file($privateKeyPath), Key\InMemory::file($publicKeyPath));
         } else {
             $config = Configuration::forUnsecuredSigner();
         }
