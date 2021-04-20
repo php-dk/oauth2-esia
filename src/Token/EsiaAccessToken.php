@@ -25,7 +25,6 @@ class EsiaAccessToken extends AccessToken implements ScopedTokenInterface
         $config->setValidationConstraints(
             new LooseValidAt($clock),
             new StrictValidAt($clock),
-            new SignedWith($config->signer(), $config->signingKey()),
         );
 
         /** @var UnencryptedToken parsedToken */
