@@ -146,7 +146,7 @@ class EsiaProvider extends AbstractProvider implements ProviderInterface
                 'mobile',
             ],
             'addresses.elements' => [
-                'contacts',
+                'addresses',
             ],
             'documents.elements' => [
                 'id_doc',
