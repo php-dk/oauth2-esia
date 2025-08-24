@@ -8,11 +8,11 @@ final class TmpFile
 
     public function __construct($content)
     {
-        $this->handle = tmpfile();
-        fwrite($this->handle, $content);
-        fseek($this->handle, 0);
+        $handler = tmpfile();
+        fwrite($handler, $content);
+        fseek($handler, 0);
 
-        $this->path = stream_get_meta_data($this->handle)['uri'];
+        $this->path = stream_get_meta_data($handler)['uri'];
     }
 
     public function __toString()
