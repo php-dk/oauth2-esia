@@ -5,9 +5,9 @@ namespace Ekapusta\OAuth2Esia\Provider;
 use Ekapusta\OAuth2Esia\Interfaces\Provider\ProviderInterface;
 use Ekapusta\OAuth2Esia\Interfaces\Security\SignerInterface;
 use Ekapusta\OAuth2Esia\Interfaces\Token\ScopedTokenInterface;
+use Ekapusta\OAuth2Esia\Jwt\JwtCompat;
 use Ekapusta\OAuth2Esia\Token\EsiaAccessToken;
 use InvalidArgumentException;
-use Lcobucci\JWT\Parsing\Encoder;
 use Lcobucci\JWT\Signer;
 use Lcobucci\JWT\Signer\Rsa\Sha256;
 use League\OAuth2\Client\Grant\AbstractGrant;
@@ -37,11 +37,6 @@ class EsiaProvider extends AbstractProvider implements ProviderInterface
     private $signer;
 
     /**
-     * @var Encoder
-     */
-    private $encoder;
-
-    /**
      * @var Signer
      */
     private $remoteSigner;
@@ -63,7 +58,6 @@ class EsiaProvider extends AbstractProvider implements ProviderInterface
 
         if (isset($collaborators['signer']) && $collaborators['signer'] instanceof SignerInterface) {
             $this->signer = $collaborators['signer'];
-            $this->encoder = new Encoder();
         } else {
             throw new InvalidArgumentException('Signer is not provided!');
         }
@@ -97,7 +91,7 @@ class EsiaProvider extends AbstractProvider implements ProviderInterface
     {
         $message = $params['scope'].$params['timestamp'].$params['client_id'].$params['state'];
         $signature = $this->signer->sign($message);
-        $params['client_secret'] = $this->encoder->base64UrlEncode($signature);
+        $params['client_secret'] = JwtCompat::base64UrlEncode($signature);
 
         return $params;
     }

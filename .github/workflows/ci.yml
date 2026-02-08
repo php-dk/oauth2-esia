@@ -134,3 +134,28 @@ jobs:
       - name: Run integration tests
         if: ${{ matrix.integration }}
         run: vendor/bin/simple-phpunit --debug --testsuite=Integration
+
+  test-jwt-versions:
+    name: Test lcobucci/jwt ${{ matrix.jwt }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php-version: ['8.1', '8.2']
+        jwt: ['^4.0', '^5.0']
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          extensions: openssl, json
+          tools: composer
+      - name: Install dependencies
+        run: composer install --no-progress --prefer-dist --optimize-autoloader
+      - name: Require lcobucci/jwt ${{ matrix.jwt }}
+        run: composer require lcobucci/jwt:${{ matrix.jwt }} --no-progress --prefer-dist
+      - name: Pre-install phpunit
+        run: COMPOSER_NO_INTERACTION=1 vendor/bin/simple-phpunit install
+      - name: Run unit tests
+        run: vendor/bin/simple-phpunit --testsuite=Unit

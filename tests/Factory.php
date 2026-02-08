@@ -4,12 +4,11 @@ namespace Ekapusta\OAuth2Esia\Tests;
 
 use Bramus\Monolog\Formatter\ColoredLineFormatter;
 use Bramus\Monolog\Formatter\ColorSchemes\TrafficLight;
+use Ekapusta\OAuth2Esia\Jwt\JwtCompat;
 use Ekapusta\OAuth2Esia\Provider\EsiaProvider;
 use Ekapusta\OAuth2Esia\Security\JWTSigner\OpenSslCliJwtSigner;
 use Ekapusta\OAuth2Esia\Token\EsiaAccessToken;
-use Lcobucci\JWT\Builder;
 use Lcobucci\JWT\Signer;
-use Lcobucci\JWT\Signer\Key;
 use Lcobucci\JWT\Signer\Rsa\Sha256;
 use Monolog\Handler\NullHandler;
 use Monolog\Handler\StreamHandler;
@@ -62,32 +61,60 @@ class Factory
      */
     public static function createAccessToken($privateKeyPath, $publicKeyPath, Signer $signer)
     {
-        $builder = new Builder();
-        $isFresh = method_exists($builder, 'issuedAt');
-        $key = new Key(file_get_contents($privateKeyPath));
+        $keyContent = file_get_contents($privateKeyPath);
+        $key = JwtCompat::createKey($keyContent);
 
-        if ($isFresh) {
-            $now = new \DateTimeImmutable();
-            $hourLater = new \DateTimeImmutable('+1 hour');
-            $builder->issuedAt($now);
-            $builder->canOnlyBeUsedAfter($now);
-            $builder->expiresAt($hourLater);
-            $builder->withClaim('urn:esia:sbj_id', 1);
-            $builder->withClaim('scope', 'one?oid=123 two?oid=456 three?oid=789 contacts?oid=999');
+        if (JwtCompat::isV5()) {
+            $token = self::buildTokenV5($signer, $key);
         } else {
-            $now = time();
-            $hourLater = $now + 3600;
-            $builder->setIssuedAt($now);
-            $builder->setNotBefore($now);
-            $builder->setExpiration($hourLater);
-            $builder->set('urn:esia:sbj_id', 1);
-            $builder->set('scope', 'one?oid=123 two?oid=456 three?oid=789 contacts?oid=999');
-            $builder->sign($signer, $key);
+            $builder = new \Lcobucci\JWT\Builder();
+            $token = method_exists($builder, 'issuedAt') ? self::buildTokenV4($signer, $key) : self::buildTokenV3($signer, $key);
         }
 
-        $accessToken = $builder->getToken($signer, $key);
+        $tokenString = method_exists($token, 'toString') ? $token->toString() : (string) $token;
 
-        return new EsiaAccessToken(['access_token' => (string) $accessToken], $publicKeyPath, $signer);
+        return new EsiaAccessToken(['access_token' => $tokenString], $publicKeyPath, $signer);
+    }
+
+    private static function buildTokenV3(Signer $signer, $key)
+    {
+        $builder = new \Lcobucci\JWT\Builder();
+        $now = time();
+        $hourLater = $now + 3600;
+        $builder->setIssuedAt($now);
+        $builder->setNotBefore($now);
+        $builder->setExpiration($hourLater);
+        $builder->set('urn:esia:sbj_id', 1);
+        $builder->set('scope', 'one?oid=123 two?oid=456 three?oid=789 contacts?oid=999');
+
+        return $builder->sign($signer, $key)->getToken();
+    }
+
+    private static function buildTokenV4(Signer $signer, $key)
+    {
+        $builder = new \Lcobucci\JWT\Builder();
+        $now = new \DateTimeImmutable();
+        $hourLater = new \DateTimeImmutable('+1 hour');
+        $builder->issuedAt($now);
+        $builder->canOnlyBeUsedAfter($now);
+        $builder->expiresAt($hourLater);
+        $builder->withClaim('urn:esia:sbj_id', 1);
+        $builder->withClaim('scope', 'one?oid=123 two?oid=456 three?oid=789 contacts?oid=999');
+
+        return $builder->getToken($signer, $key);
+    }
+
+    private static function buildTokenV5(Signer $signer, $key)
+    {
+        $encoder = new \Lcobucci\JWT\Encoding\JoseEncoder();
+        $formatter = \Lcobucci\JWT\Encoding\ChainedFormatter::default();
+        $builder = \Lcobucci\JWT\Token\Builder::new($encoder, $formatter);
+        $now = new \DateTimeImmutable();
+        $hourLater = $now->modify('+1 hour');
+        $builder = $builder->issuedAt($now)->canOnlyBeUsedAfter($now)->expiresAt($hourLater);
+        $builder = $builder->withClaim('urn:esia:sbj_id', 1)->withClaim('scope', 'one?oid=123 two?oid=456 three?oid=789 contacts?oid=999');
+
+        return $builder->getToken($signer, $key);
     }
 
     /**
@@ -103,7 +130,7 @@ class Factory
      */
     public static function createGostAccessToken($privateKeyPath, $publicKeyPath)
     {
-        return self::createAccessToken($privateKeyPath, $publicKeyPath, new OpenSslCliJwtSigner(getenv('ESIA_CLIENT_OPENSSL_TOOL_PATH') ?: 'openssl'));
+        return self::createAccessToken($privateKeyPath, $publicKeyPath, OpenSslCliJwtSigner::create(getenv('ESIA_CLIENT_OPENSSL_TOOL_PATH') ?: 'openssl'));
     }
 
     /**
@@ -111,6 +138,6 @@ class Factory
      */
     public static function createRsaAccessToken($privateKeyPath, $publicKeyPath)
     {
-        return self::createAccessToken($privateKeyPath, $publicKeyPath, new OpenSslCliJwtSigner(getenv('ESIA_CLIENT_OPENSSL_TOOL_PATH') ?: 'openssl', 'RS256'));
+        return self::createAccessToken($privateKeyPath, $publicKeyPath, OpenSslCliJwtSigner::create(getenv('ESIA_CLIENT_OPENSSL_TOOL_PATH') ?: 'openssl', 'RS256'));
     }
 }

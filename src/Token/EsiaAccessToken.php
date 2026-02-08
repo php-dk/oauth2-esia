@@ -2,9 +2,9 @@
 
 namespace Ekapusta\OAuth2Esia\Token;
 
+use Ekapusta\OAuth2Esia\Jwt\JwtCompat;
 use InvalidArgumentException;
 use Lcobucci\JWT\Signer;
-use Lcobucci\JWT\Signer\Key;
 
 class EsiaAccessToken extends TrustedEsiaAccessToken
 {
@@ -12,7 +12,8 @@ class EsiaAccessToken extends TrustedEsiaAccessToken
     {
         parent::__construct($options);
 
-        if (!$this->parsedToken->verify($signer, new Key(file_get_contents($publicKeyPath)))) {
+        $key = JwtCompat::createKey(file_get_contents($publicKeyPath));
+        if (!$this->parsedToken->verify($signer, $key)) {
             throw new InvalidArgumentException('Access token can not be verified: '.var_export($options, true));
         }
     }

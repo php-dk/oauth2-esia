@@ -2,56 +2,32 @@
 
 namespace Ekapusta\OAuth2Esia\Security\JWTSigner;
 
-use Ekapusta\OAuth2Esia\Transport\Process;
 use Lcobucci\JWT\Signer\BaseSigner;
-use Lcobucci\JWT\Signer\Key;
 
-final class OpenSslCliJwtSigner extends BaseSigner
+/**
+ * JWT signer using OpenSSL CLI (GOST or RSA). Supports lcobucci/jwt v3, v4 and v5.
+ *
+ * Use create() to get an implementation for the installed JWT version:
+ *   $signer = OpenSslCliJwtSigner::create('openssl', 'GOST3410_2012_256');
+ *
+ * On v3/v4 "new OpenSslCliJwtSignerV34()" can be used for the same behaviour as before.
+ */
+final class OpenSslCliJwtSigner
 {
-    private $toolPath;
-    private $algorythmId;
-    private $postParams = '';
-
-    public function __construct($toolPath = 'openssl', $algorythmId = 'GOST3410_2012_256')
+    /**
+     * Returns a signer compatible with the installed lcobucci/jwt version (v3, v4 or v5).
+     *
+     * @param string $toolPath
+     * @param string $algorythmId
+     *
+     * @return \Lcobucci\JWT\Signer|OpenSslCliJwtSignerV34
+     */
+    public static function create($toolPath = 'openssl', $algorythmId = 'GOST3410_2012_256')
     {
-        $this->toolPath = $toolPath;
-        $this->algorythmId = $algorythmId;
-
-        if (false !== stristr($this->getAlgorithmId(), 'gost')) {
-            $this->postParams = '-engine gost';
+        if (class_exists(BaseSigner::class)) {
+            return new OpenSslCliJwtSignerV34($toolPath, $algorythmId);
         }
-    }
 
-    public function getAlgorithmId()
-    {
-        return $this->algorythmId;
-    }
-
-    public function doVerify($expected, $payload, Key $key)
-    {
-        $verify = new TmpFile($key->getContent());
-        $signature = new TmpFile($expected);
-
-        Process::fromArray([
-            $this->toolPath,
-            'dgst',
-            '-verify '.escapeshellarg($verify),
-            '-signature '.escapeshellarg($signature),
-            $this->postParams,
-        ], $payload);
-
-        return true;
-    }
-
-    public function createHash($payload, Key $key)
-    {
-        $sign = new TmpFile($key->getContent());
-
-        return (string) Process::fromArray([
-            $this->toolPath,
-            'dgst',
-            '-sign '.escapeshellarg($sign),
-            $this->postParams,
-        ], $payload);
+        return new OpenSslCliJwtSignerV5($toolPath, $algorythmId);
     }
 }

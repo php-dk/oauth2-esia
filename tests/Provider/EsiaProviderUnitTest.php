@@ -62,7 +62,7 @@ class EsiaProviderUnitTest extends TestCase
         ], [
             'httpClient' => new HttpClient(['handler' => $httpStack]),
             'signer' => $this->signer,
-            'remoteSigner' => new OpenSslCliJwtSigner(getenv('ESIA_CLIENT_OPENSSL_TOOL_PATH') ?: 'openssl', 'GOST3410_2012_256'),
+            'remoteSigner' => OpenSslCliJwtSigner::create(getenv('ESIA_CLIENT_OPENSSL_TOOL_PATH') ?: 'openssl', 'GOST3410_2012_256'),
         ]);
     }
 
