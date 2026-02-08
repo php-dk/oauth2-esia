@@ -80,11 +80,13 @@ final class JwtCompat
         return strtr(rtrim(base64_encode($data), '='), '+/', '-_');
     }
 
+    /**
+     * v4 also has Token\Parser, JoseEncoder, Validator. v5 is detected by Token\Builder::new().
+     */
     public static function isV5()
     {
-        return class_exists(TokenParser::class)
-            && class_exists(JoseEncoder::class)
-            && class_exists(Validator::class);
+        return class_exists(\Lcobucci\JWT\Token\Builder::class)
+            && method_exists(\Lcobucci\JWT\Token\Builder::class, 'new');
     }
 
     public static function isV4()

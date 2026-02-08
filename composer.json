@@ -22,6 +22,9 @@
     "psr/log": "^1.0",
     "ramsey/uuid": "^3.0 || ^4.0"
   },
+  "suggest": {
+    "lcobucci/clock": "For full JWT time validation (nbf/exp/iat) with lcobucci/jwt 5.x"
+  },
   "require-dev": {
     "bramus/monolog-colored-line-formatter": "^2.0",
     "monolog/monolog": "^1.24",

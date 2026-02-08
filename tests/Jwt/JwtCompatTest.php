@@ -22,8 +22,8 @@ class JwtCompatTest extends TestCase
     {
         $encoded = JwtCompat::base64UrlEncode('test');
         $this->assertNotEmpty($encoded);
-        $this->assertNotContains('+', $encoded);
-        $this->assertNotContains('/', $encoded);
+        $this->assertStringNotContainsString('+', $encoded);
+        $this->assertStringNotContainsString('/', $encoded);
     }
 
     public function testCreateKey()
