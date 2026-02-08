@@ -66,9 +66,11 @@ class Factory
 
         if (JwtCompat::isV5()) {
             $token = self::buildTokenV5($signer, $key);
+        } elseif (JwtCompat::isV4()) {
+            $verificationKey = JwtCompat::createKey(file_get_contents($publicKeyPath));
+            $token = self::buildTokenV4($signer, $key, $verificationKey);
         } else {
-            $builder = new \Lcobucci\JWT\Builder();
-            $token = method_exists($builder, 'issuedAt') ? self::buildTokenV4($signer, $key) : self::buildTokenV3($signer, $key);
+            $token = self::buildTokenV3($signer, $key);
         }
 
         $tokenString = method_exists($token, 'toString') ? $token->toString() : (string) $token;
@@ -90,9 +92,13 @@ class Factory
         return $builder->sign($signer, $key)->getToken();
     }
 
-    private static function buildTokenV4(Signer $signer, $key)
+    /**
+     * v4: Builder is an interface; get implementation from Configuration.
+     */
+    private static function buildTokenV4(Signer $signer, $signingKey, $verificationKey)
     {
-        $builder = new \Lcobucci\JWT\Builder();
+        $config = \Lcobucci\JWT\Configuration::forAsymmetricSigner($signer, $signingKey, $verificationKey);
+        $builder = $config->builder();
         $now = new \DateTimeImmutable();
         $hourLater = new \DateTimeImmutable('+1 hour');
         $builder->issuedAt($now);
@@ -101,7 +107,7 @@ class Factory
         $builder->withClaim('urn:esia:sbj_id', 1);
         $builder->withClaim('scope', 'one?oid=123 two?oid=456 three?oid=789 contacts?oid=999');
 
-        return $builder->getToken($signer, $key);
+        return $builder->getToken($config->signer(), $config->signingKey());
     }
 
     private static function buildTokenV5(Signer $signer, $key)

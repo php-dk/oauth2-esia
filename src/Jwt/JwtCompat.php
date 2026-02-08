@@ -107,12 +107,13 @@ final class JwtCompat
         throw new \RuntimeException('No JWT encoder found (lcobucci/jwt Parsing\\Encoder or Encoding\\JoseEncoder)');
     }
 
+    /**
+     * In v4 Parser is an interface; get implementation from Configuration.
+     */
     private static function createV4Parser()
     {
-        if (class_exists(JoseEncoder::class)) {
-            return new \Lcobucci\JWT\Parser(new JoseEncoder());
-        }
+        $config = \Lcobucci\JWT\Configuration::forUnsecuredSigner();
 
-        return new \Lcobucci\JWT\Parser();
+        return $config->parser();
     }
 }
